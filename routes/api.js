@@ -1,5 +1,13 @@
 const express = require("express");
 const router = express.Router();
+const Sequelize = require("sequelize");
+const Op = Sequelize.Op;
+
+const { check, validationResult } = require("express-validator");
+
+const bcryptjs = require("bcryptjs"); // Include Bcryptjs
+
+const auth = require("basic-auth"); // Include Basic Auth
 
 const { User, Course } = require("../models");
 
@@ -19,22 +27,68 @@ function asyncHandler(cb) {
   };
 }
 
-// GET /api/users 200 - Returns the currently authenticated user
-router.get(
-  "/users",
-  asyncHandler(async (req, res) => {
+// Authenticator Middleware
+const authenticateUser = async (req, res, next) => {
+  let message = null;
+  const credentials = auth(req);
+
+  console.log(auth(req));
+  if (credentials) {
     const users = await User.findAll();
-    res.json(users);
-  })
-);
+    const user = users.find(u => u.emailAddress === credentials.name);
+
+    if (user) {
+      const authenticated = bcryptjs.compareSync(
+        credentials.pass,
+        user.password
+      );
+
+      if (authenticated) {
+        console.log(
+          `Authentication successful for username: ${credentials.name}`
+        );
+
+        req.currentUser = user;
+      } else {
+        message = `Authentication failure for username: ${credentials.name}`;
+      }
+    } else {
+      message = `User not found for username: ${credentials.name}`;
+    }
+  } else {
+    message = "Auth header not found";
+  }
+  if (message) {
+    console.warn(message);
+
+    res.status(401).json({ message: "Access Denied" });
+  } else {
+    next();
+  }
+};
+
+// GET /api/users 200 - Returns the currently authenticated user
+router.get("/users", authenticateUser, (req, res) => {
+  const user = req.currentUser;
+
+  res.json({
+    name: user.firstName,
+    username: user.lastName
+  });
+});
 
 // POST /api/users 201 - Creates a user, sets the Location header to "/", and returns no content
 router.post(
   "/users",
   jsonParse,
   asyncHandler(async (req, res) => {
-    const user = await User.create(req.body);
-    res.status(201).send();
+    const user = req.body;
+    user.password = bcryptjs.hashSync(user.password);
+    await User.create(user);
+    res
+      .status(201)
+      .send("user created")
+      .end();
   })
 );
 
@@ -80,6 +134,7 @@ router.get(
 // POST /api/courses 201 - Creates a course, sets the Location header to the URI for the course, and returns no content
 router.post(
   "/courses",
+  authenticateUser,
   jsonParse,
   asyncHandler(async (req, res) => {
     const course = await Course.create(req.body);
@@ -96,6 +151,7 @@ router.post(
 // PUT /api/courses/:id 204 - Updates a course and returns no content
 router.put(
   "/courses/:id",
+  authenticateUser,
   asyncHandler(async (req, res) => {
     let { id } = req.params;
     const course = await Course.findByPk(id);
@@ -112,6 +168,7 @@ router.put(
 // DELETE /api/courses/:id 204 - Deletes a course and returns no content
 router.delete(
   "/courses/:id",
+  authenticateUser,
   asyncHandler(async (req, res) => {
     let { id } = req.params;
     const course = await Course.findByPk(id);
