@@ -12,15 +12,33 @@ module.exports = sequelize => {
       },
       userId: {
         type: Sequelize.INTEGER,
-        allowNull: false
+        allowNull: false,
+        validate: {
+          notNull: {
+            args: true,
+            msg: "User is Required!"
+          }
+        }
       },
       title: {
         type: Sequelize.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+          notNull: {
+            args: true,
+            msg: "Title is Required!"
+          }
+        }
       },
       description: {
         type: Sequelize.TEXT,
-        allowNull: false
+        allowNull: false,
+        validate: {
+          notNull: {
+            args: true,
+            msg: "Description is Required!"
+          }
+        }
       },
       estimatedTime: {
         type: Sequelize.STRING,

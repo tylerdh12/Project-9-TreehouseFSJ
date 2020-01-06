@@ -11,6 +11,7 @@ module.exports = sequelize => {
         allowNull: false,
         validate: {
           notNull: {
+            args: true,
             msg: "First Name is Required!"
           }
         }
@@ -20,6 +21,7 @@ module.exports = sequelize => {
         allowNull: false,
         validate: {
           notNull: {
+            args: true,
             msg: "Last Name is Required!"
           }
         }
@@ -29,6 +31,7 @@ module.exports = sequelize => {
         allowNull: false,
         validate: {
           notNull: {
+            args: true,
             msg: "Email Address is Required!"
           }
         }
@@ -38,6 +41,7 @@ module.exports = sequelize => {
         allowNull: false,
         validate: {
           notNull: {
+            args: true,
             msg: "Password is Required!"
           }
         }
