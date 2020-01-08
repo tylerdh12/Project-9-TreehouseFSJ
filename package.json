@@ -8,7 +8,7 @@
     "seed": "cross-env DB_ENABLE_LOGGING=true node './seed'"
   },
   "keywords": [],
-  "author": "",
+  "author": "Tyler Harper",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^1.18.3"

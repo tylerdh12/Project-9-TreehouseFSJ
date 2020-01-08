@@ -14,9 +14,13 @@ module.exports = sequelize => {
         type: Sequelize.INTEGER,
         allowNull: false,
         validate: {
+          notEmpty: {
+            args: true,
+            msg: 'Please provide a "User"'
+          },
           notNull: {
             args: true,
-            msg: "User is Required!"
+            msg: '"User" is Required!'
           }
         }
       },
@@ -24,9 +28,13 @@ module.exports = sequelize => {
         type: Sequelize.STRING,
         allowNull: false,
         validate: {
+          notEmpty: {
+            args: true,
+            msg: 'Please Provide a "Title"'
+          },
           notNull: {
             args: true,
-            msg: "Title is Required!"
+            msg: '"Title" is Required!'
           }
         }
       },
@@ -34,9 +42,13 @@ module.exports = sequelize => {
         type: Sequelize.TEXT,
         allowNull: false,
         validate: {
+          notEmpty: {
+            args: true,
+            msg: 'Please provide a "Description"'
+          },
           notNull: {
             args: true,
-            msg: "Description is Required!"
+            msg: '"Description" is Required!'
           }
         }
       },
@@ -51,5 +63,16 @@ module.exports = sequelize => {
     },
     { sequelize }
   );
+
+  Course.associate = models => {
+    Course.belongsTo(models.User, {
+      as: "owner",
+      foreignKey: {
+        fieldName: "userId",
+        allowNull: false
+      }
+    });
+  };
+
   return Course;
 };

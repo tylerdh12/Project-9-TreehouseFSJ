@@ -3,8 +3,10 @@
 // load modules
 const express = require("express");
 const morgan = require("morgan");
+const bodyParser = require("body-parser");
 
-const routes = require("./routes/api");
+const userRoutes = require("./api/routes/users");
+const courseRoutes = require("./api/routes/courses");
 
 // variable to enable global error logging
 const enableGlobalErrorLogging =
@@ -16,9 +18,28 @@ const app = express();
 // setup morgan which gives us http request logging
 app.use(morgan("dev"));
 
+// setup body parser
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+// To ensure Prevention of CORS Errors
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Methods", "PUT, POST, GET, PATCH, DELETE");
+    return res.status(200).json({});
+  }
+  next();
+});
+
 // TODO setup your api routes here
 
-app.use("/api", routes);
+app.use("/api/users", userRoutes);
+app.use("/api/courses", courseRoutes);
 
 // setup a friendly greeting for the root route
 app.get("/", (req, res) => {
