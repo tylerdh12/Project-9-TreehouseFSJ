@@ -203,13 +203,23 @@ router.delete(
   asyncHandler(async (req, res) => {
     let { courseId } = req.params;
     const course = await Course.findByPk(courseId);
-    course
-      ? course.destroy().then(() => {
+    if (course) {
+      if (course.userId === req.currentUser.id) {
+        course.destroy().then(() => {
           res.status(204).json();
-        })
-      : res
-          .status(404)
-          .json({ message: "The record your looking for does not exist" });
+        });
+      } else {
+        res.status(401).json({
+          message: "You can only create or update courses that belong to you.",
+          currentUser: req.currentUser.id,
+          userId: req.body.userId
+        });
+      }
+    } else {
+      res
+        .status(404)
+        .json({ message: "The record your looking for does not exist" });
+    }
   })
 );
 
