@@ -67,8 +67,17 @@ const authenticateUser = async (req, res, next) => {
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const courses = await Course.findAll();
-    res.json(courses);
+    const courses = await Course.findAll({
+      include: [
+        {
+          model: User,
+          as: "owner"
+        }
+      ]
+    });
+    courses
+      ? res.status(200).json(courses)
+      : res.status(404).json({ message: "Unable to find the courses" });
   })
 );
 
@@ -77,9 +86,16 @@ router.get(
   "/:courseId",
   asyncHandler(async (req, res) => {
     let { courseId } = req.params;
-    const course = await Course.findByPk(courseId);
+    const course = await Course.findByPk(courseId, {
+      include: [
+        {
+          model: User,
+          as: "owner"
+        }
+      ]
+    });
     course
-      ? res.json(course)
+      ? res.status(200).json(course)
       : res.status(404).json({
           message:
             "The course was not found. Either the course doesn't exist or there has been an error in your request."
@@ -90,31 +106,93 @@ router.get(
 // POST /api/courses 201 - Creates a course, sets the Location header to the URI for the course, and returns no content
 router.post(
   "/",
+  [
+    check("title")
+      .exists()
+      .withMessage('Please Provide a value for "title"'),
+    check("description")
+      .exists()
+      .withMessage('Please Provide a value for "description"')
+  ],
   authenticateUser,
-  asyncHandler(async (req, res) => {
-    const course = await Course.create(req.body);
-    course
-      ? res.json(course)
-      : res.status(404).json({
-          message:
-            "There has been an error while looking for the courses results."
-        });
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    // If there are validation errors...
+    if (!errors.isEmpty()) {
+      // Use the Array `map()` method to get a list of error messages.
+      const errorMessages = errors.array().map(error => error.msg);
+
+      // Return the validation errors to the client.
+      res.status(422).json({ errors: errorMessages });
+    } else if (req.body.userId === req.currentUser.id) {
+      // Get the course from the request body.
+      const course = await Course.create({
+        userId: req.currentUser.id,
+        title: req.body.title,
+        description: req.body.description,
+        estimatedTime: req.body.estimatedTime,
+        materialsNeeded: req.body.materialsNeeded
+      });
+      const uri = "/api/course/" + course.id;
+      res.setHeader("Location", uri);
+      res.status(201).json();
+    } else {
+      res.status(401).json({
+        message: "You can only create or update courses that belong to you.",
+        currentUser: req.currentUser.id,
+        userId: req.body.userId
+      });
+    }
   })
 );
 
 // PUT /api/courses/:id 204 - Updates a course and returns no content
 router.put(
   "/:courseId",
+  [
+    check("title")
+      .exists()
+      .withMessage('Please Provide a value for "title"'),
+    check("description")
+      .exists()
+      .withMessage('Please Provide a value for "description"')
+  ],
   authenticateUser,
   asyncHandler(async (req, res) => {
-    let { courseId } = req.params;
-    const course = await Course.findByPk(courseId);
-    course
-      ? res.json(course)
-      : res.status(404).json({
-          message:
-            "The course was not found. Either the course doesn't exist or there has been an error in your request."
-        });
+    const errors = validationResult(req);
+    // If there are validation errors...
+    if (!errors.isEmpty()) {
+      // Use the Array `map()` method to get a list of error messages.
+      const errorMessages = errors.array().map(error => error.msg);
+
+      // Return the validation errors to the client.
+      res.status(422).json({ errors: errorMessages });
+    } else if (req.body.userId === req.currentUser.id) {
+      let { courseId } = req.params;
+      const course = await Course.findByPk(courseId);
+      course
+        ? course
+            .update({
+              userId: req.body.userId,
+              title: req.body.title,
+              description: req.body.description,
+              estimatedTime: req.body.estimatedTime,
+              materialsNeeded: req.body.materialsNeeded
+            })
+            .then(() => {
+              res.status(204).json();
+            })
+        : res.status(404).json({
+            message:
+              "The course was not found. Either the course doesn't exist or there has been an error in your request."
+          });
+    } else {
+      res.status(401).json({
+        message: "You can only create or update courses that belong to you.",
+        currentUser: req.currentUser.id,
+        userId: req.body.userId
+      });
+    }
   })
 );
 
@@ -127,7 +205,7 @@ router.delete(
     const course = await Course.findByPk(courseId);
     course
       ? course.destroy().then(() => {
-          res.status(204).send();
+          res.status(204).json();
         })
       : res
           .status(404)
