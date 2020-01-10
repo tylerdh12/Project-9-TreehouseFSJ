@@ -30,7 +30,9 @@ const authenticateUser = async (req, res, next) => {
 
   console.log(auth(req));
   if (credentials) {
-    const users = await User.findAll();
+    const users = await User.findAll({
+      attributes: { exclude: ["createdAt", "updatedAt"] }
+    });
     const user = users.find(u => u.emailAddress === credentials.name);
 
     if (user) {
@@ -68,10 +70,12 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     const courses = await Course.findAll({
+      attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
         {
           model: User,
-          as: "owner"
+          as: "owner",
+          attributes: { exclude: ["password", "createdAt", "updatedAt"] }
         }
       ]
     });
@@ -87,10 +91,12 @@ router.get(
   asyncHandler(async (req, res) => {
     let { courseId } = req.params;
     const course = await Course.findByPk(courseId, {
+      attributes: { exclude: ["createdAt", "updatedAt"] },
       include: [
         {
           model: User,
-          as: "owner"
+          as: "owner",
+          attributes: { exclude: ["password", "createdAt", "updatedAt"] }
         }
       ]
     });
@@ -169,7 +175,9 @@ router.put(
       res.status(422).json({ errors: errorMessages });
     } else if (req.body.userId === req.currentUser.id) {
       let { courseId } = req.params;
-      const course = await Course.findByPk(courseId);
+      const course = await Course.findByPk(courseId, {
+        attributes: { exclude: ["createdAt", "updatedAt"] }
+      });
       course
         ? course
             .update({
@@ -187,7 +195,7 @@ router.put(
               "The course was not found. Either the course doesn't exist or there has been an error in your request."
           });
     } else {
-      res.status(401).json({
+      res.status(403).json({
         message: "You can only create or update courses that belong to you.",
         currentUser: req.currentUser.id,
         userId: req.body.userId
@@ -202,14 +210,16 @@ router.delete(
   authenticateUser,
   asyncHandler(async (req, res) => {
     let { courseId } = req.params;
-    const course = await Course.findByPk(courseId);
+    const course = await Course.findByPk(courseId, {
+      attributes: { exclude: ["createdAt", "updatedAt"] }
+    });
     if (course) {
       if (course.userId === req.currentUser.id) {
         course.destroy().then(() => {
           res.status(204).json();
         });
       } else {
-        res.status(401).json({
+        res.status(403).json({
           message: "You can only create or update courses that belong to you.",
           currentUser: req.currentUser.id,
           userId: req.body.userId
