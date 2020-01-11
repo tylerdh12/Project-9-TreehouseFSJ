@@ -129,7 +129,7 @@ router.post(
       const errorMessages = errors.array().map(error => error.msg);
 
       // Return the validation errors to the client.
-      res.status(422).json({ errors: errorMessages });
+      res.status(400).json({ errors: errorMessages });
     } else if (req.body.userId === req.currentUser.id) {
       // Get the course from the request body.
       const course = await Course.create({
@@ -172,7 +172,7 @@ router.put(
       const errorMessages = errors.array().map(error => error.msg);
 
       // Return the validation errors to the client.
-      res.status(422).json({ errors: errorMessages });
+      res.status(400).json({ errors: errorMessages });
     } else if (req.body.userId === req.currentUser.id) {
       let { courseId } = req.params;
       const course = await Course.findByPk(courseId, {

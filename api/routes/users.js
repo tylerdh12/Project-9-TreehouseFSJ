@@ -108,7 +108,7 @@ router.post(
 
       // Return the validation errors to the client.
       res
-        .status(422)
+        .status(400)
         .json({
           location: "body",
           message: "Invalid User Entry",
@@ -141,7 +141,7 @@ router.post(
         res.setHeader("Location", "/");
         res.status(201).json();
       } else if (userExists) {
-        res.status(422).json({ message: "User already exists" });
+        res.status(400).json({ message: "User already exists" });
       }
     }
   })
