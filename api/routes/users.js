@@ -43,15 +43,15 @@ const authenticateUser = async (req, res, next) => {
       if (authenticated) {
         // Hide log to show successful login on server
         // console.log(
-        //   `Authentication successful for username: ${credentials.name}`
+        //   `Authentication successful for emailAddress: ${credentials.name}`
         // );
 
         req.currentUser = user;
       } else {
-        message = `Authentication failure for username: ${credentials.name}`;
+        message = `Authentication failure for Email Address: ${credentials.name}`;
       }
     } else {
-      message = `User not found for username: ${credentials.name}`;
+      message = `User not found for Email Address: ${credentials.name}`;
     }
   } else {
     message = "Auth header not found";
@@ -73,8 +73,8 @@ router.get("/", authenticateUser, (req, res) => {
   const user = req.currentUser;
 
   res.json({
-    name: user.firstName,
-    username: user.lastName
+    firstName: user.firstName,
+    lastName: user.lastName
   });
 });
 
